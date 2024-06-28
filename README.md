@@ -1,6 +1,6 @@
 ## gitsigns-yadm.nvim
 
-This uses [`gitsigns`](https://github.com/lewis6991/gitsigns.nvim) `_on_attach_pre` function to check if the currently attached buffer is file tracked by [`yadm`](https://yadm.io/), and if it is, sets the correct `toplevel` and `gitdir` attributes.
+This uses [`gitsigns`](https://github.com/lewis6991/gitsigns.nvim) `_on_attach_pre` function to check if the currently attached buffer is file tracked by [`yadm`](https://yadm.io/), highlighting the buffer properly if it is.
 
 ## Installation
 
@@ -59,10 +59,11 @@ The default computed values are:
 {
     homedir = os.getenv("HOME"),
     yadm_repo_git = vim.fn.expand("~/.local/share/yadm/repo.git"),
+    shell_timeout_ms = 2000, -- how many milliseconds to wait for yadm to finish
 }
 ```
 
-You can pass those options to the `setup` function to configure:
+Example configuration (`lazy` calls setup with these `opts` like `require("gitsigns-yadm").setup({ ... })`):
 
 ```lua
 return {
@@ -71,15 +72,16 @@ return {
         "nvim-lua/plenary.nvim",
         {
             "seanbreckenridge/gitsigns-yadm.nvim",
-            config = function ()
-                require("gitsigns-yadm").setup({ yadm_repo_git = "~/.config/yadm/repo.git "})
-            end
+            opts = {
+                yadm_repo_git = "~/.config/yadm/repo.git",
+                shell_timeout_ms = 1000,
+            },
         },
     },
-
+}
 ```
 
-If you want to disable this when `yadm` is not installed, you can use `vim.fn.executable`:
+If you want to disable this when `yadm` is not installed, you can use `vim.fn.executable` to check before running the callback:
 
 ```lua
 _on_attach_pre = function(_, callback)
@@ -90,17 +92,3 @@ _on_attach_pre = function(_, callback)
     end
 end,
 ```
-
-## Troubleshooting
-
-If things don't seem to be working, try scheduling the `yadm_signs` call so that the `gitsigns` does not suppress the errors:
-
-```lua
-_on_attach_pre = function(_, callback)
-    vim.schedule(function()
-        require("gitsigns-yadm").yadm_signs(callback)
-    end)
-end,
-```
-
-and then check `:messages`.

@@ -1,11 +1,13 @@
 local M = {}
 
 ---@class (exact) GitsignsYadm.Config
----@field homedir? string
----@field yadm_repo_git? string
+---@field homedir? string your home directory -- the base path yadm acts on
+---@field yadm_repo_git? string the path to your yadm git repository
+---@field shell_timeout_ms? number how many milliseconds to wait for yadm to finish
 M.config = {
     homedir = nil,
     yadm_repo_git = nil,
+    shell_timeout_ms = 2000,
 }
 
 ---@param opts? GitsignsYadm.Config
@@ -33,6 +35,10 @@ local function resolve_config(opts)
             end
         end
     end
+
+    if options.shell_timeout_ms ~= nil then
+        M.config.shell_timeout_ms = options.shell_timeout_ms
+    end
 end
 
 -- upstream logic for processing the callback value:
@@ -40,7 +46,7 @@ end
 
 --- checks if the buffer is tracked by yadm, and sets the
 --- correct toplevel and gitdir attributes if it is
----@param callback fun(_: {toplevel: string, gitdir: string}?): nil
+---@param callback fun(_: {toplevel: string?, gitdir: string?}?): nil
 ---@return nil
 function M.yadm_signs(callback)
     if M.config.homedir == nil or M.config.yadm_repo_git == nil then
@@ -65,6 +71,14 @@ function M.yadm_signs(callback)
         end
     end
 
+    -- note: without the schedule/schedule_wrap here, on some files it will block interaction
+    -- and prevent the user from being able to do anything till this finishes
+    -- if yadm runs particularly slow for some reason, we never want to block the UI
+    --
+    -- ls-files is not processed by yadm in any way - it is passed directly on to git
+    -- but the user could possibly add yadm hooks which could hang
+    -- which is why shell_timeout_ms is something the user can configure
+    -- https://github.com/TheLocehiliosan/yadm/blob/0a5e7aa353621bd28a289a50c0f0d61462b18c76/yadm#L149-L153
     vim.schedule(function()
         local file = vim.fn.expand("%:p")
         -- if the file is not in your home directory, skip
@@ -76,22 +90,28 @@ function M.yadm_signs(callback)
             return callback()
         end
         -- use yadm ls-files to check if the file is tracked
-        require("plenary.job")
-            :new({
-                command = "yadm",
-                args = { "ls-files", "--error-unmatch", file },
-                on_exit = vim.schedule_wrap(function(_, return_val)
-                    if return_val == 0 then
-                        return callback({
-                            toplevel = M.config.homedir,
-                            gitdir = M.config.yadm_repo_git,
-                        })
-                    else
-                        return callback()
-                    end
-                end),
-            })
-            :sync()
+        local task = require("plenary.job"):new({
+            command = "yadm",
+            enable_handlers = false, -- if we need to debug stdout/err, re-enable this
+            enabled_recording = false,
+            args = { "ls-files", "--error-unmatch", file },
+            on_exit = vim.schedule_wrap(function(_, return_val)
+                if return_val == 0 then
+                    return callback({
+                        toplevel = M.config.homedir,
+                        gitdir = M.config.yadm_repo_git,
+                    })
+                else
+                    return callback()
+                end
+            end),
+        })
+        -- first argument is true/false if it succeeded
+        -- can check task.code, is 0 or 1 (yadm retcode) or nil if timeout
+        local _, err = pcall(task.sync, task, M.config.shell_timeout_ms)
+        if type(err) == "string" then
+            vim.notify(err, vim.log.levels.ERROR, { title = "gitsigns-yadm.nvim" })
+        end
     end)
 end
 
