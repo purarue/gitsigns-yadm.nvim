@@ -39,13 +39,6 @@ local function resolve_config(opts)
     if options.shell_timeout_ms ~= nil then
         M.config.shell_timeout_ms = options.shell_timeout_ms
     end
-
-    for _, msg in pairs({
-        "The repository for gitsigns-yadm has been updated to https://github.com/purarue/gitsigns-yadm.nvim",
-        "Please update your configuration to that URL",
-    }) do
-        vim.notify_once(msg, vim.log.levels.WARN, { title = "gitsigns-yadm.nvim" })
-    end
 end
 
 -- NOTE: for posterity, the reason why I decided to only pass callback and not
