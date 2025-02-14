@@ -31,8 +31,8 @@ end
 require("gitsigns").setup({
   debug_mode = true, -- You must add this to enable debug messages
   -- ADD GITSIGNS CONFIG THAT IS _NECESSARY_ FOR REPRODUCING THE ISSUE
-  _on_attach_pre = function(_, callback)
-    require("gitsigns-yadm").yadm_signs(callback)
+  _on_attach_pre = function(bufnr, callback)
+    require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
   end,
 })
 ```
