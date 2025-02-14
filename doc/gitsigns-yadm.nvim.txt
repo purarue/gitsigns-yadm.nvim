@@ -1,4 +1,4 @@
-*gitsigns-yadm.nvim.txt*             For             Last change: 2024 July 01
+*gitsigns-yadm.nvim.txt*           For           Last change: 2025 February 14
 
 ==============================================================================
 Table of Contents                       *gitsigns-yadm.nvim-table-of-contents*
@@ -24,8 +24,8 @@ passing the `callback` to the `yadm_signs` function:
 
 >lua
     require('gitsigns').setup({
-        _on_attach_pre = function(_, callback)
-            require("gitsigns-yadm").yadm_signs(callback)
+        _on_attach_pre = function(bufnr, callback)
+            require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
         end,
         -- other gitsigns configuration...
         on_attach = function(bufnr)
@@ -48,6 +48,8 @@ The default computed values are:
         homedir = os.getenv("HOME"),
         yadm_repo_git = vim.fn.expand("~/.local/share/yadm/repo.git"),
         shell_timeout_ms = 2000, -- how many milliseconds to wait for yadm to finish
+        disable_inside_gitdir = true -- disable if currently in a git repository
+        disabled_filetypes = { "gitcommit", "gitrebase" },
     }
 <
 
@@ -60,13 +62,13 @@ Call `setup` to override the defaults:
     })
 <
 
-If you want to disable this when `yadm` is not installed, you can use
-`vim.fn.executable` to check before running the `callback`
+If you want to disable this when `yadm` is not installed (or optionally disable
+the check for any other reason), you can do so like this:
 
 >lua
-    _on_attach_pre = function(_, callback)
+    _on_attach_pre = function(bufnr, callback)
         if vim.fn.executable("yadm") == 1 then
-            require("gitsigns-yadm").yadm_signs(callback)
+            require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
         else
             callback()
         end
@@ -74,7 +76,7 @@ If you want to disable this when `yadm` is not installed, you can use
 <
 
 
-INSTALLEXAMPLES ~
+INSTALL EXAMPLES ~
 
 With `lazy` <https://github.com/folke/lazy.nvim>
 
@@ -91,8 +93,8 @@ With `lazy` <https://github.com/folke/lazy.nvim>
             },
         },
         opts = {
-            _on_attach_pre = function(_, callback)
-                require("gitsigns-yadm").yadm_signs(callback)
+            _on_attach_pre = function(bufnr, callback)
+                require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
             end,
             -- other configuration for gitsigns...
         },
@@ -118,8 +120,8 @@ following:
             "lewis6991/gitsigns.nvim",
             opts = {
                 ...
-                _on_attach_pre = function(_, callback)
-                    require("gitsigns-yadm").yadm_signs(callback)
+                _on_attach_pre = function(bufnr, callback)
+                    require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
                 end,
                 ...
             }
