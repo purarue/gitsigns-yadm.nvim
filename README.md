@@ -29,6 +29,7 @@ The default computed values are:
     homedir = os.getenv("HOME"),
     yadm_repo_git = vim.fn.expand("~/.local/share/yadm/repo.git"),
     shell_timeout_ms = 2000, -- how many milliseconds to wait for yadm to finish
+    disable_inside_gitdir = true -- disable if currently in a git repository
 }
 ```
 
@@ -48,6 +49,8 @@ _on_attach_pre = function(_, callback)
     if vim.fn.executable("yadm") == 1 then
         require("gitsigns-yadm").yadm_signs(callback)
     else
+        -- calling callback() without any arguments disables the
+        -- gitsigns-yadm.nvim plugin for this buffer
         callback()
     end
 end,

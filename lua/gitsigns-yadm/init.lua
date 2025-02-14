@@ -3,11 +3,13 @@ local M = {}
 ---@class (exact) GitsignsYadm.Config
 ---@field homedir? string your home directory -- the base path yadm acts on
 ---@field yadm_repo_git? string the path to your yadm git repository
+---@field disable_inside_gitdir? boolean disable if currently in a git repository
 ---@field shell_timeout_ms? number how many milliseconds to wait for yadm to finish
 M.config = {
     homedir = nil,
     yadm_repo_git = nil,
     shell_timeout_ms = 2000,
+    disable_inside_gitdir = true,
 }
 
 ---@param opts? GitsignsYadm.Config
@@ -32,6 +34,12 @@ local function resolve_config(opts)
             local pth = vim.fn.expand("~/.local/share/yadm/repo.git")
             if (vim.uv or vim.loop).fs_stat(pth) then
                 M.config.yadm_repo_git = pth
+            else
+                vim.notify_once(
+                    "Could not find yadm repo at default location: ~/.local/share/yadm/repo.git",
+                    vim.log.levels.WARN,
+                    { title = "gitsigns-yadm.nvim" }
+                )
             end
         end
     end
@@ -39,6 +47,72 @@ local function resolve_config(opts)
     if options.shell_timeout_ms ~= nil then
         M.config.shell_timeout_ms = options.shell_timeout_ms
     end
+
+    if options.disable_inside_gitdir ~= nil then
+        M.config.disable_inside_gitdir = options.disable_inside_gitdir
+    end
+end
+
+---@param file string
+---@param callback fun(_: {toplevel: string?, gitdir: string?}?): nil
+function M._run_gitsigns_attach(file, callback)
+    -- TODO: wrap :new in-case it errors?
+    -- it validates if the cmd is available with vim.fn.executable(),
+    -- if yadm is not available, it will print a long traceback
+    --
+    -- use yadm ls-files to check if the file is tracked
+    ---@diagnostic disable: missing-fields
+    local task = require("plenary.job"):new({
+        command = "yadm",
+        enable_handlers = false, -- if we need to debug stdout/err, re-enable this
+        enabled_recording = false,
+        args = { "ls-files", "--error-unmatch", file },
+        on_exit = vim.schedule_wrap(function(_, return_val)
+            if return_val == 0 then
+                return callback({
+                    toplevel = M.config.homedir,
+                    gitdir = M.config.yadm_repo_git,
+                })
+            else
+                return callback()
+            end
+        end),
+    })
+
+    -- first argument is true/false if it succeeded
+    -- can check task.code, is 0 or 1 (yadm retcode) or nil if timeout
+    local _, err = pcall(task.sync, task, M.config.shell_timeout_ms)
+    if type(err) == "string" then
+        vim.notify(err, vim.log.levels.ERROR, { title = "gitsigns-yadm.nvim" })
+    end
+end
+
+-- https://github.com/nvim-telescope/telescope.nvim/blob/78857db9e8d819d3cc1a9a7bdc1d39d127a36495/lua/telescope/utils.lua#L555
+--
+---@param cmd? string[] List of arguments to pass
+---@param cwd? string Working directory for job
+---@return number? ret
+function M._cmd_returncode(cmd, cwd)
+    if type(cmd) ~= "table" then
+        vim.notify("_get_os_command_output", vim.log.levels.ERROR, {
+            msg = "cmd has to be a table",
+            level = "ERROR",
+        })
+        return nil
+    end
+    local command = table.remove(cmd, 1)
+    local _, ret = require("plenary.job")
+        :new({
+            command = command,
+            args = cmd,
+            cwd = cwd,
+        })
+        :sync()
+    return ret
+end
+
+function M._inside_gitdir()
+    return M._cmd_returncode({ "git", "rev-parse", "--is-inside-work-tree" }) == 0
 end
 
 -- NOTE: for posterity, the reason why I decided to only pass callback and not
@@ -84,6 +158,11 @@ function M.yadm_signs(callback)
         end
     end
 
+    if M.config.disable_inside_gitdir and M._inside_gitdir() then
+        vim.notify("Disabling inside git directory", vim.log.levels.DEBUG, { title = "gitsigns-yadm.nvim" })
+        return callback()
+    end
+
     -- NOTE: without the schedule/schedule_wrap here, on some files it will block interaction
     -- and prevent the user from being able to do anything till this finishes
     -- if yadm runs particularly slow for some reason, we never want to block the UI
@@ -102,33 +181,8 @@ function M.yadm_signs(callback)
         if not vim.fn.filereadable(file) then
             return callback()
         end
-        -- TODO: wrap :new in-case it errors?
-        -- it validates if the cmd is available with vim.fn.executable(),
-        -- if yadm is not available, it will print a long traceback
-        --
-        -- use yadm ls-files to check if the file is tracked
-        local task = require("plenary.job"):new({
-            command = "yadm",
-            enable_handlers = false, -- if we need to debug stdout/err, re-enable this
-            enabled_recording = false,
-            args = { "ls-files", "--error-unmatch", file },
-            on_exit = vim.schedule_wrap(function(_, return_val)
-                if return_val == 0 then
-                    return callback({
-                        toplevel = M.config.homedir,
-                        gitdir = M.config.yadm_repo_git,
-                    })
-                else
-                    return callback()
-                end
-            end),
-        })
-        -- first argument is true/false if it succeeded
-        -- can check task.code, is 0 or 1 (yadm retcode) or nil if timeout
-        local _, err = pcall(task.sync, task, M.config.shell_timeout_ms)
-        if type(err) == "string" then
-            vim.notify(err, vim.log.levels.ERROR, { title = "gitsigns-yadm.nvim" })
-        end
+
+        M._run_gitsigns_attach(file, callback)
     end)
 end
 
