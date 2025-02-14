@@ -170,7 +170,7 @@ function M.yadm_signs(callback)
     end
 
     if M.config.disable_inside_gitdir and M._inside_gitdir() then
-        vim.notify("Disabling inside git directory", vim.log.levels.DEBUG, { title = "gitsigns-yadm.nvim" })
+        -- vim.notify("Disabling inside git directory", vim.log.levels.DEBUG, { title = "gitsigns-yadm.nvim" })
         return
     end
 
