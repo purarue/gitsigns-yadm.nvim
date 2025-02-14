@@ -8,8 +8,8 @@ Install the plugin with your plugin manager, and then add a `_on_attach_pre` fun
 
 ```lua
 require('gitsigns').setup({
-    _on_attach_pre = function(_, callback)
-        require("gitsigns-yadm").yadm_signs(callback)
+    _on_attach_pre = function(bufnr, callback)
+        require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
     end,
     -- other gitsigns configuration...
     on_attach = function(bufnr)
@@ -42,12 +42,14 @@ require("gitsigns-yadm").setup({
 })
 ```
 
-If you want to disable this when `yadm` is not installed, you can use `vim.fn.executable` to check before running the `callback`:
+If you want to disable this when `yadm` is not installed (or optionally disable the check for any other reason), you can do so like this:
 
 ```lua
-_on_attach_pre = function(_, callback)
+_on_attach_pre = function(bufnr, callback)
     if vim.fn.executable("yadm") == 1 then
-        require("gitsigns-yadm").yadm_signs(callback)
+        require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
+    else
+        callback()
     end
 end,
 ```
@@ -69,8 +71,8 @@ With [`lazy`](https://github.com/folke/lazy.nvim):
         },
     },
     opts = {
-        _on_attach_pre = function(_, callback)
-            require("gitsigns-yadm").yadm_signs(callback)
+        _on_attach_pre = function(bufnr, callback)
+            require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
         end,
         -- other configuration for gitsigns...
     },
@@ -93,8 +95,8 @@ Since this doesn't require calling `setup` (unless you want to configure the def
         "lewis6991/gitsigns.nvim",
         opts = {
             ...
-            _on_attach_pre = function(_, callback)
-                require("gitsigns-yadm").yadm_signs(callback)
+            _on_attach_pre = function(bufnr, callback)
+                require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
             end,
             ...
         }
