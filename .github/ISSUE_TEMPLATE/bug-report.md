@@ -37,6 +37,8 @@ require("gitsigns").setup({
 })
 ```
 
+Put the above in `init-repro.lua` and run `nvim -u init-repro.lua ...`
+
 **Expected behavior**
 
 A clear and concise description of what you expected to happen.
