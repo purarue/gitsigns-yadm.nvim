@@ -30,6 +30,7 @@ The default computed values are:
     yadm_repo_git = vim.fn.expand("~/.local/share/yadm/repo.git"),
     shell_timeout_ms = 2000, -- how many milliseconds to wait for yadm to finish
     disable_inside_gitdir = true -- disable if currently in a git repository
+    disabled_filetypes = { "gitcommit", "gitrebase" },
 }
 ```
 
