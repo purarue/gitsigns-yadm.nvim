@@ -55,7 +55,12 @@ end
 
 ---@param file string
 ---@param callback fun(_: {toplevel: string?, gitdir: string?}?): nil
-function M._run_gitsigns_attach(file, callback)
+---@param bufnr number
+function M._run_gitsigns_attach(file, callback, bufnr)
+    if not vim.api.nvim_buf_is_loaded(bufnr) then
+        return
+    end
+
     -- TODO: wrap :new in-case it errors?
     -- it validates if the cmd is available with vim.fn.executable(),
     -- if yadm is not available, it will print a long traceback
@@ -68,13 +73,16 @@ function M._run_gitsigns_attach(file, callback)
         enabled_recording = false,
         args = { "ls-files", "--error-unmatch", file },
         on_exit = vim.schedule_wrap(function(_, return_val)
+            -- check to make sure the buffer hasn't closed since
+            -- we started the task. If the buffer is gone, then quit
+            if not vim.api.nvim_buf_is_loaded(bufnr) then
+                return
+            end
             if return_val == 0 then
-                return callback({
+                callback({
                     toplevel = M.config.homedir,
                     gitdir = M.config.yadm_repo_git,
                 })
-            else
-                return callback()
             end
         end),
     })
@@ -136,6 +144,9 @@ end
 ---@param callback fun(_: {toplevel: string?, gitdir: string?}?): nil
 ---@return nil
 function M.yadm_signs(callback)
+    -- keep track of which  buffer we're running this on
+    local bufnr = vim.api.nvim_get_current_buf()
+
     if M.config.homedir == nil or M.config.yadm_repo_git == nil then
         -- in case user did not setup the plugin, try resolving to the default config values to see if that fixes it
         resolve_config()
@@ -146,7 +157,7 @@ function M.yadm_signs(callback)
                 vim.log.levels.WARN,
                 { title = "gitsigns-yadm.nvim" }
             )
-            return callback()
+            return
         end
         if M.config.yadm_repo_git == nil then
             vim.notify_once(
@@ -154,13 +165,13 @@ function M.yadm_signs(callback)
                 vim.log.levels.WARN,
                 { title = "gitsigns-yadm.nvim" }
             )
-            return callback()
+            return
         end
     end
 
     if M.config.disable_inside_gitdir and M._inside_gitdir() then
         vim.notify("Disabling inside git directory", vim.log.levels.DEBUG, { title = "gitsigns-yadm.nvim" })
-        return callback()
+        return
     end
 
     -- NOTE: without the schedule/schedule_wrap here, on some files it will block interaction
@@ -175,14 +186,14 @@ function M.yadm_signs(callback)
         local file = vim.fn.expand("%:p")
         -- if the file is not in your home directory, skip
         if not vim.startswith(file, M.config.homedir) then
-            return callback()
+            return
         end
         -- if buffer is not a file, don't do anything
         if not vim.fn.filereadable(file) then
-            return callback()
+            return
         end
 
-        M._run_gitsigns_attach(file, callback)
+        M._run_gitsigns_attach(file, callback, bufnr)
     end)
 end
 

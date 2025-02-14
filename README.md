@@ -48,10 +48,6 @@ If you want to disable this when `yadm` is not installed, you can use `vim.fn.ex
 _on_attach_pre = function(_, callback)
     if vim.fn.executable("yadm") == 1 then
         require("gitsigns-yadm").yadm_signs(callback)
-    else
-        -- calling callback() without any arguments disables the
-        -- gitsigns-yadm.nvim plugin for this buffer
-        callback()
     end
 end,
 ```
