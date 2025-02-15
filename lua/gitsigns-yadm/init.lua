@@ -175,6 +175,12 @@ function M.yadm_signs(callback, options)
         end
     end
 
+    -- this is an optimization -- if we're already in a git directory
+    -- as specified by 'git rev-parse --is-inside-work-tree', then
+    -- we skip the yadm call.
+    --
+    -- On my machine, the git command runs in 2ms, while the
+    -- yadm command can take about 120ms.
     if M.config.disable_inside_gitdir and M._inside_gitdir() then
         return callback()
     end
@@ -189,7 +195,8 @@ function M.yadm_signs(callback, options)
     -- https://github.com/TheLocehiliosan/yadm/blob/0a5e7aa353621bd28a289a50c0f0d61462b18c76/yadm#L149-L153
     vim.schedule(function()
         local file = vim.fn.expand("%:p")
-        -- if the file is not in your home directory, skip
+        -- if the file is not in your home directory,
+        -- skip checking if yadm should attach
         if not vim.startswith(file, M.config.homedir) then
             return callback()
         end
@@ -198,6 +205,7 @@ function M.yadm_signs(callback, options)
             return callback()
         end
 
+        -- run yadm ls-files to check if this file matches
         M._run_gitsigns_attach(file, callback, bufnr)
     end)
 end

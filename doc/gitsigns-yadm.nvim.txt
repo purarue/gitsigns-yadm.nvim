@@ -1,4 +1,4 @@
-*gitsigns-yadm.nvim.txt*           For           Last change: 2025 February 14
+*gitsigns-yadm.nvim.txt*           For           Last change: 2025 February 15
 
 ==============================================================================
 Table of Contents                       *gitsigns-yadm.nvim-table-of-contents*
@@ -69,6 +69,8 @@ the check for any other reason), you can do so like this:
         if vim.fn.executable("yadm") == 1 then
             require("gitsigns-yadm").yadm_signs(callback, { bufnr = bufnr })
         else
+            -- if optionally disabling the plugin, make sure to call
+            -- 'callback' with no arguments
             callback()
         end
     end,
