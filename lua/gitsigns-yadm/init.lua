@@ -5,20 +5,16 @@ local M = {}
 ---@field yadm_repo_git? string the path to your yadm git repository
 ---@field disable_inside_gitdir? boolean disable if currently in a git repository
 ---@field shell_timeout_ms? number how many milliseconds to wait for yadm to finish
----@field disabled_filetypes? string[] list of filetypes to skip attaching to
 M.config = {
     homedir = nil,
     yadm_repo_git = nil,
     shell_timeout_ms = 2000,
     disable_inside_gitdir = true,
-    disabled_filetypes = { "gitcommit", "gitrebase" },
 }
 
 ---@param opts? GitsignsYadm.Config
 local function resolve_config(opts)
     local options = opts or {}
-
-    -- if not set, set with what the user provided or default
     if M.config.homedir == nil then
         if options.homedir ~= nil then
             M.config.homedir = options.homedir
@@ -31,7 +27,6 @@ local function resolve_config(opts)
         end
     end
 
-    -- if not set, set with what the user provided or default
     if M.config.yadm_repo_git == nil then
         if options.yadm_repo_git then
             M.config.yadm_repo_git = vim.fn.expand(options.yadm_repo_git)
@@ -49,17 +44,12 @@ local function resolve_config(opts)
         end
     end
 
-    -- override options if provided by user
     if options.shell_timeout_ms ~= nil then
         M.config.shell_timeout_ms = options.shell_timeout_ms
     end
 
     if options.disable_inside_gitdir ~= nil then
         M.config.disable_inside_gitdir = options.disable_inside_gitdir
-    end
-
-    if options.disabled_filetypes ~= nil then
-        M.config.disabled_filetypes = options.disabled_filetypes
     end
 end
 
@@ -160,11 +150,6 @@ function M.yadm_signs(callback, options)
     -- keep track of which  buffer we're running this on
     local opts = options or {}
     local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
-
-    -- skip if in disabled filetypes
-    if vim.tbl_contains(M.config.disabled_filetypes, vim.bo[bufnr].filetype) then
-        return callback()
-    end
 
     if M.config.homedir == nil or M.config.yadm_repo_git == nil then
         -- in case user did not setup the plugin, try resolving to the default config values to see if that fixes it
