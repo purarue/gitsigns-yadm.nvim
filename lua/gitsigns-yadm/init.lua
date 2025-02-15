@@ -83,6 +83,8 @@ function M._run_gitsigns_attach(file, callback, bufnr)
                     toplevel = M.config.homedir,
                     gitdir = M.config.yadm_repo_git,
                 })
+            else
+                return callback()
             end
         end),
     })
