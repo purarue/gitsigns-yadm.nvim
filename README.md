@@ -30,6 +30,7 @@ The default computed values are:
     yadm_repo_git = vim.fn.expand("~/.local/share/yadm/repo.git"),
     shell_timeout_ms = 2000, -- how many milliseconds to wait for yadm to finish
     disable_inside_gitdir = true -- disable if currently in a git repository
+    on_yadm_attach = nil, -- callback function that is called when we successfully attach to a yadm file
 }
 ```
 
@@ -54,6 +55,25 @@ _on_attach_pre = function(bufnr, callback)
         callback()
     end
 end,
+```
+
+If you want to run some custom code when this attaches successfully, you can pass a `on_yadm_attach` callback function:
+
+```lua
+{
+    "purarue/gitsigns-yadm.nvim",
+    ---@module 'gitsigns-yadm'
+    ---@type GitsignsYadm.Config
+    opts = {
+        on_yadm_attach = function()
+            -- set a buffer-local variable so that other code can run custom
+            -- code if we're editing a yadm file
+            vim.b.yadm_tracked = true
+            -- setup vim-fugitive to work with yadm
+            vim.fn.FugitiveDetect(require("gitsigns-yadm").config.yadm_repo_git)
+        end,
+    },
+}
 ```
 
 ### Install Examples

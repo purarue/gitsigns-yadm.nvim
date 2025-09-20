@@ -1,15 +1,21 @@
 local M = {}
 
+---@class (exact) GitsignsYadm.OnYadmAttachEvent
+---@field file string the filename being attached to
+---@field bufnr number the buffer number being attached to
+
 ---@class (exact) GitsignsYadm.Config
 ---@field homedir? string your home directory -- the base path yadm acts on
 ---@field yadm_repo_git? string the path to your yadm git repository
 ---@field disable_inside_gitdir? boolean disable if currently in a git repository
+---@field on_yadm_attach? fun(event: GitsignsYadm.OnYadmAttachEvent): nil callback function that is called when we successfully attach to a yadm file
 ---@field shell_timeout_ms? number how many milliseconds to wait for yadm to finish
 M.config = {
     homedir = nil,
     yadm_repo_git = nil,
     shell_timeout_ms = 2000,
     disable_inside_gitdir = true,
+    on_yadm_attach = nil,
 }
 
 ---@param opts? GitsignsYadm.Config
@@ -51,6 +57,10 @@ local function resolve_config(opts)
     if options.disable_inside_gitdir ~= nil then
         M.config.disable_inside_gitdir = options.disable_inside_gitdir
     end
+
+    if options.on_yadm_attach ~= nil then
+        M.config.on_yadm_attach = options.on_yadm_attach
+    end
 end
 
 ---@param file string
@@ -79,10 +89,15 @@ function M._run_gitsigns_attach(file, callback, bufnr)
                 return callback()
             end
             if return_val == 0 then
+                -- callback for gitsigns
                 callback({
                     toplevel = M.config.homedir,
                     gitdir = M.config.yadm_repo_git,
                 })
+                -- user callback, if supplied
+                if M.config.on_yadm_attach ~= nil then
+                    M.config.on_yadm_attach({ file = file, bufnr = bufnr })
+                end
             else
                 return callback()
             end
