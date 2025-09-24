@@ -119,9 +119,9 @@ end
 ---@return number? ret
 function M._cmd_returncode(cmd, cwd)
     if type(cmd) ~= "table" then
-        vim.notify("_get_os_command_output", vim.log.levels.ERROR, {
+        vim.notify("_cmd_returncode", vim.log.levels.ERROR, {
             msg = "cmd has to be a table",
-            level = "ERROR",
+            level = vim.log.levels.ERROR,
         })
         return nil
     end

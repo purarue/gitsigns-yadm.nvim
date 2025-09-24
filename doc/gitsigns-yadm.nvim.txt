@@ -109,6 +109,8 @@ With `lazy` <https://github.com/folke/lazy.nvim>
             "nvim-lua/plenary.nvim",
             {
                 "purarue/gitsigns-yadm.nvim",
+                ---@module 'gitsigns-yadm'
+                ---@type GitsignsYadm.Config
                 opts = {
                     shell_timeout_ms = 1000,
                 },
