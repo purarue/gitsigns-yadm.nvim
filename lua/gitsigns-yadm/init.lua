@@ -215,6 +215,13 @@ function M.yadm_signs(callback, options)
         if not vim.startswith(file, M.config.homedir) then
             return callback()
         end
+
+        -- if the file is in the *git* directory, e.g.
+        -- COMMIT_EDITMSG, skip checking if yadm should attach
+        if vim.startswith(file, M.config.yadm_repo_git) then
+            return callback()
+        end
+
         -- if buffer is not a file, don't do anything
         if not vim.fn.filereadable(file) then
             return callback()
