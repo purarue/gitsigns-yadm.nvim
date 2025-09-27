@@ -7,7 +7,7 @@ local M = {}
 ---@class (exact) GitsignsYadm.Config
 ---@field homedir? string your home directory -- the base path yadm acts on
 ---@field yadm_repo_git? string the path to your yadm git repository
----@field disable_inside_gitdir? boolean disable if currently in a git repository
+---@field disable_inside_gitdir? boolean disable if CWD is in a git repository
 ---@field on_yadm_attach? fun(event: GitsignsYadm.OnYadmAttachEvent): nil callback function that is called when we successfully attach to a yadm file
 ---@field shell_timeout_ms? number how many milliseconds to wait for yadm to finish
 M.config = {
@@ -18,49 +18,44 @@ M.config = {
     on_yadm_attach = nil,
 }
 
+local has_setup = false
+
 ---@param opts? GitsignsYadm.Config
 local function resolve_config(opts)
-    local options = opts or {}
-    if M.config.homedir == nil then
-        if options.homedir ~= nil then
-            M.config.homedir = options.homedir
-        else
-            local os = require("os")
-            local homedir = os.getenv("HOME")
-            if homedir ~= nil then
-                M.config.homedir = homedir
-            end
-        end
-    end
+    -- stylua: ignore
+    if has_setup then return end
+    has_setup = true
 
+    M.config = vim.tbl_extend("force", M.config, opts or {})
+    -- default to vim.env.HOME if unset
+    M.config.homedir = M.config.homedir or vim.env.HOME
     if M.config.yadm_repo_git == nil then
-        if options.yadm_repo_git then
-            M.config.yadm_repo_git = vim.fn.expand(options.yadm_repo_git)
-        else
-            local pth = vim.fn.expand("~/.local/share/yadm/repo.git")
-            if (vim.uv or vim.loop).fs_stat(pth) then
-                M.config.yadm_repo_git = pth
-            else
-                vim.notify_once(
-                    "Could not find yadm repo at default location: ~/.local/share/yadm/repo.git",
-                    vim.log.levels.WARN,
-                    { title = "gitsigns-yadm.nvim" }
-                )
-            end
+        local repo_path = vim.fs.joinpath(vim.env.HOME, ".local/share/yadm/repo.git")
+        if (vim.uv or vim.loop).fs_stat(repo_path) then
+            M.config.yadm_repo_git = repo_path
         end
     end
+end
 
-    if options.shell_timeout_ms ~= nil then
-        M.config.shell_timeout_ms = options.shell_timeout_ms
+---@return boolean true if we should return early
+local function _validate_config()
+    if M.config.homedir == nil then
+        vim.notify_once(
+            'Could not determine $HOME, pass your home directory to setup() like:\nrequire("gitsigns-yadm").setup({ homedir = "/home/your_name" })',
+            vim.log.levels.WARN,
+            { title = "gitsigns-yadm.nvim" }
+        )
+        return true
     end
-
-    if options.disable_inside_gitdir ~= nil then
-        M.config.disable_inside_gitdir = options.disable_inside_gitdir
+    if M.config.yadm_repo_git == nil then
+        vim.notify_once(
+            'Could not determine location of yadm repo, pass it to setup() like:\nrequire("gitsigns-yadm").setup({ yadm_repo_git = "~/path/to/repo.git" })',
+            vim.log.levels.WARN,
+            { title = "gitsigns-yadm.nvim" }
+        )
+        return true
     end
-
-    if options.on_yadm_attach ~= nil then
-        M.config.on_yadm_attach = options.on_yadm_attach
-    end
+    return false
 end
 
 ---@param file string
@@ -84,12 +79,12 @@ function M._run_gitsigns_attach(file, callback, bufnr)
         args = { "ls-files", "--error-unmatch", file },
         on_exit = vim.schedule_wrap(function(_, return_val)
             -- check to make sure the buffer hasn't closed since
-            -- we started the task. If the buffer is gone, then quit
+            -- we started the task. If the buffer is gone, skip custom callback
             if not vim.api.nvim_buf_is_loaded(bufnr) then
                 return callback()
             end
             if return_val == 0 then
-                -- callback for gitsigns
+                -- callback for gitsigns, this means we're attaching to a yadm file
                 callback({
                     toplevel = M.config.homedir,
                     gitdir = M.config.yadm_repo_git,
@@ -140,7 +135,7 @@ function M._inside_gitdir()
     return M._cmd_returncode({ "git", "rev-parse", "--is-inside-work-tree" }) == 0
 end
 
----@class (exact) YadmSignsOptions
+---@class (exact) GitsignsYadm.YadmSignsOptions
 ---@field bufnr number? -- the buffer being attached to
 
 -- NOTE: for posterity, the reason why I decided to only pass callback and not
@@ -162,42 +157,19 @@ end
 --- checks if the buffer is tracked by yadm, and sets the
 --- correct toplevel and gitdir attributes if it is
 ---@param callback fun(_: {toplevel: string?, gitdir: string?}?): nil
----@param options YadmSignsOptions?
+---@param options GitsignsYadm.YadmSignsOptions?
 function M.yadm_signs(callback, options)
-    -- keep track of which  buffer we're running this on
     local opts = options or {}
     local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
 
-    if M.config.homedir == nil or M.config.yadm_repo_git == nil then
-        -- in case user did not setup the plugin, try resolving to the default config values to see if that fixes it
-        resolve_config()
+    -- run setup in-case user did not pass opts or call setup
+    resolve_config()
 
-        if M.config.homedir == nil then
-            vim.notify_once(
-                'Could not determine $HOME, pass your home directory to setup() like:\nrequire("gitsigns-yadm").setup({ homedir = "/home/your_name" })',
-                vim.log.levels.WARN,
-                { title = "gitsigns-yadm.nvim" }
-            )
-            return callback()
-        end
-        if M.config.yadm_repo_git == nil then
-            vim.notify_once(
-                'Could not determine location of yadm repo, pass it to setup() like:\nrequire("gitsigns-yadm").setup({ yadm_repo_git = "~/path/to/repo.git" })',
-                vim.log.levels.WARN,
-                { title = "gitsigns-yadm.nvim" }
-            )
-            return callback()
-        end
-    end
-
-    -- this is an optimization -- if we're already in a git directory
-    -- as specified by 'git rev-parse --is-inside-work-tree', then
-    -- we skip the yadm call.
-    --
-    -- On my machine, the git command runs in 2ms, while the
-    -- yadm command can take about 120ms.
-    if M.config.disable_inside_gitdir and M._inside_gitdir() then
-        return callback()
+    -- if home or gitdir is not set, warns, calls the callback to
+    -- end _on_attach_pre and returns early
+    if _validate_config() then
+        callback()
+        return
     end
 
     -- NOTE: without the schedule/schedule_wrap here, on some files it will block interaction
@@ -209,7 +181,19 @@ function M.yadm_signs(callback, options)
     -- which is why shell_timeout_ms is something the user can configure
     -- https://github.com/TheLocehiliosan/yadm/blob/0a5e7aa353621bd28a289a50c0f0d61462b18c76/yadm#L149-L153
     vim.schedule(function()
+        -- this is an optimization -- if we're already in a git directory
+        -- as specified by 'git rev-parse --is-inside-work-tree', then
+        -- we skip the yadm call.
+        --
+        -- On my machine, the git command runs in 2ms, while the
+        -- yadm command can take about 120ms.
+        if M.config.disable_inside_gitdir and M._inside_gitdir() then
+            return callback()
+        end
+
+        -- expand to full path
         local file = vim.fn.expand("%:p")
+
         -- if the file is not in your home directory,
         -- skip checking if yadm should attach
         if not vim.startswith(file, M.config.homedir) then

@@ -26,9 +26,9 @@ The default computed values are:
 ```lua
 {
     homedir = os.getenv("HOME"),
-    yadm_repo_git = vim.fn.expand("~/.local/share/yadm/repo.git"),
+    yadm_repo_git = vim.fs.normalize("~/.local/share/yadm/repo.git"),
     shell_timeout_ms = 2000, -- how many milliseconds to wait for yadm to finish
-    disable_inside_gitdir = true -- disable if currently in a git repository
+    disable_inside_gitdir = true -- disable if CWD is in a git repository
     on_yadm_attach = nil, -- callback function that is called when we successfully attach to a yadm file
 }
 ```
