@@ -118,13 +118,7 @@ end
 ---@param cwd? string Working directory for job
 ---@return number? ret
 function M._cmd_returncode(cmd, cwd)
-    if type(cmd) ~= "table" then
-        vim.notify("_cmd_returncode", vim.log.levels.ERROR, {
-            msg = "cmd has to be a table",
-            level = vim.log.levels.ERROR,
-        })
-        return nil
-    end
+    ---@diagnostic disable-next-line: param-type-mismatch
     local command = table.remove(cmd, 1)
     local _, ret = require("plenary.job")
         :new({
