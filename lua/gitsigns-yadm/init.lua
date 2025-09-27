@@ -30,9 +30,14 @@ local function resolve_config(opts)
     -- default to vim.env.HOME if unset
     M.config.homedir = M.config.homedir or vim.env.HOME
     if M.config.yadm_repo_git == nil then
-        local repo_path = vim.fs.joinpath(vim.env.HOME, ".local/share/yadm/repo.git")
+        local repo_path = vim.fs.normalize("~/.local/share/yadm/repo.git")
         if (vim.uv or vim.loop).fs_stat(repo_path) then
             M.config.yadm_repo_git = repo_path
+        end
+    else
+        -- expand if user passed in something like ~/path/to/repo.git
+        if vim.startswith(M.config.yadm_repo_git, "~") then
+            M.config.yadm_repo_git = vim.fs.normalize(M.config.yadm_repo_git)
         end
     end
 end
