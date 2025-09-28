@@ -180,6 +180,10 @@ function M.yadm_signs(callback, options)
     -- which is why shell_timeout_ms is something the user can configure
     -- https://github.com/TheLocehiliosan/yadm/blob/0a5e7aa353621bd28a289a50c0f0d61462b18c76/yadm#L149-L153
     vim.schedule(function()
+        if not vim.api.nvim_buf_is_loaded(bufnr) then
+            return callback()
+        end
+
         -- this is an optimization -- if we're already in a git directory
         -- as specified by 'git rev-parse --is-inside-work-tree', then
         -- we skip the yadm call.
@@ -199,7 +203,7 @@ function M.yadm_signs(callback, options)
             return callback()
         end
 
-        -- if the file is in the *git* directory, e.g.
+        -- if the file is in the yadm directory, e.g.
         -- COMMIT_EDITMSG, skip checking if yadm should attach
         if vim.startswith(file, M.config.yadm_repo_git) then
             return callback()

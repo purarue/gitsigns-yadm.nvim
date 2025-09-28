@@ -99,7 +99,7 @@ pass a `on_yadm_attach` callback function:
 
 INSTALL EXAMPLES ~
 
-With `lazy` <https://github.com/folke/lazy.nvim>
+With `lazy` <https://github.com/folke/lazy.nvim>:
 
 >lua
     {
@@ -124,7 +124,7 @@ With `lazy` <https://github.com/folke/lazy.nvim>
     }
 <
 
-Sincethis doesn’t require calling `setup` (unless you want to configure the
+Since this doesn’t require calling `setup` (unless you want to configure the
 defaults), in accordance with `lazy`s best practices
 <https://lazy.folke.io/developers#best-practices> you could also do the
 following:
