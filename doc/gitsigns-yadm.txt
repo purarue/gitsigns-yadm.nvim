@@ -1,13 +1,13 @@
-*gitsigns-yadm.nvim.txt*    For NVIM v0.12.0    Last change: 2025 September 27
+*gitsigns-yadm.txt*       For NVIM v0.12.0      Last change: 2025 September 27
 
 ==============================================================================
-Table of Contents                       *gitsigns-yadm.nvim-table-of-contents*
+Table of Contents                            *gitsigns-yadm-table-of-contents*
 
-  - gitsigns-yadm.nvim                 |gitsigns-yadm.nvim-gitsigns-yadm.nvim|
-  - Installation                             |gitsigns-yadm.nvim-installation|
-  - Configuration                           |gitsigns-yadm.nvim-configuration|
+  - gitsigns-yadm.nvim                      |gitsigns-yadm-gitsigns-yadm.nvim|
+  - Installation                                  |gitsigns-yadm-installation|
+  - Configuration                                |gitsigns-yadm-configuration|
 
-GITSIGNS-YADM.NVIM                     *gitsigns-yadm.nvim-gitsigns-yadm.nvim*
+GITSIGNS-YADM.NVIM                          *gitsigns-yadm-gitsigns-yadm.nvim*
 
 This uses the `gitsigns` <https://github.com/lewis6991/gitsigns.nvim>
 `_on_attach_pre` function to check if the currently attached buffer is file
@@ -15,7 +15,7 @@ tracked by `yadm` <https://yadm.io/>, highlighting the buffer properly if it
 is.
 
 
-INSTALLATION                                 *gitsigns-yadm.nvim-installation*
+INSTALLATION                                      *gitsigns-yadm-installation*
 
 Install the plugin with your plugin manager, and then add a `_on_attach_pre`
 function to your `gitsigns` configuration
@@ -31,11 +31,11 @@ passing the `callback` to the `yadm_signs` function:
     })
 <
 
-See |gitsigns-yadm.nvim-below| for examples using `lazy`
+See |gitsigns-yadm-below| for examples using `lazy`
 <https://github.com/folke/lazy.nvim>.
 
 
-CONFIGURATION                               *gitsigns-yadm.nvim-configuration*
+CONFIGURATION                                    *gitsigns-yadm-configuration*
 
 If using a standard `yadm` setup, you likely won’t need to configure
 anything.
