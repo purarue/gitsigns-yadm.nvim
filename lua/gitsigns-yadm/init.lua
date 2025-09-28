@@ -191,7 +191,7 @@ function M.yadm_signs(callback, options)
         end
 
         -- expand to full path
-        local file = vim.api.nvim_get_bufname(bufnr)
+        local file = vim.api.nvim_buf_get_name(bufnr)
 
         -- if the file is not in your home directory,
         -- skip checking if yadm should attach
