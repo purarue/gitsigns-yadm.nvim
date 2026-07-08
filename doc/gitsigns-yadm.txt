@@ -1,4 +1,4 @@
-*gitsigns-yadm.txt*       For NVIM v0.12.0      Last change: 2025 September 27
+*gitsigns-yadm.txt*       For NVIM v0.12.0           Last change: 2026 July 07
 
 ==============================================================================
 Table of Contents                            *gitsigns-yadm-table-of-contents*
@@ -105,7 +105,6 @@ With `lazy` <https://github.com/folke/lazy.nvim>:
     {
         "lewis6991/gitsigns.nvim",
         dependencies = {
-            "nvim-lua/plenary.nvim",
             {
                 "purarue/gitsigns-yadm.nvim",
                 ---@module 'gitsigns-yadm'
@@ -133,10 +132,6 @@ following:
     {
         {
             "purarue/gitsigns-yadm.nvim",
-            lazy = true,
-        },
-        {
-            "nvim-lua/plenary.nvim",
             lazy = true,
         },
         {

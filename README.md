@@ -83,7 +83,6 @@ With [`lazy`](https://github.com/folke/lazy.nvim):
 {
     "lewis6991/gitsigns.nvim",
     dependencies = {
-        "nvim-lua/plenary.nvim",
         {
             "purarue/gitsigns-yadm.nvim",
             ---@module 'gitsigns-yadm'
@@ -108,10 +107,6 @@ Since this doesn't require calling `setup` (unless you want to configure the def
 {
     {
         "purarue/gitsigns-yadm.nvim",
-        lazy = true,
-    },
-    {
-        "nvim-lua/plenary.nvim",
         lazy = true,
     },
     {

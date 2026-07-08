@@ -77,7 +77,7 @@ function M._run_gitsigns_attach(file, callback, bufnr)
     --
     -- use yadm ls-files to check if the file is tracked
     ---@diagnostic disable: missing-fields
-    local task = require("plenary.job"):new({
+    local task = require("gitsigns-yadm.job"):new({
         command = "yadm",
         enable_handlers = false, -- if we need to debug stdout/err, re-enable this
         enabled_recording = false,
@@ -120,7 +120,7 @@ end
 function M._cmd_returncode(cmd, cwd)
     ---@diagnostic disable-next-line: param-type-mismatch
     local command = table.remove(cmd, 1)
-    local _, ret = require("plenary.job")
+    local _, ret = require("gitsigns-yadm.job")
         :new({
             command = command,
             args = cmd,
